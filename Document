@@ -1,0 +1,464 @@
+# Travel CRM - Inquiry Management API Documentation
+
+## Base URL
+```
+https://your-api-domain.com/api/v1
+```
+
+Admin: admin@tcrm.com / admin123
+Manager: manager@tcrm.com / manager123
+Agent: agent@tcrm.com / agent123
+
+## Authentication
+All endpoints require authentication using Bearer token:
+```
+Authorization: Bearer {your-jwt-token}
+```
+
+Complete User Routes Package:
+🔐 Public Routes (No Authentication):
+
+POST /api/v1/users/login - User login with JWT token
+POST /api/v1/users/register - User registration
+POST /api/v1/users/forgot-password - Password reset (placeholder)
+
+👤 Protected Routes (Authentication Required):
+
+GET /api/v1/users/profile - Get user profile
+PUT /api/v1/users/profile - Update user profile
+POST /api/v1/users/change-password - Change password
+POST /api/v1/users/logout - Logout user
+POST /api/v1/users/refresh-token - Refresh JWT token
+
+👥 Admin/Manager Routes:
+
+GET /api/v1/users/all - Get all users with pagination/filtering
+GET /api/v1/users/:id - Get user by ID
+GET /api/v1/users/dropdown/agents - Get agents for assignment dropdown
+
+🔧 Admin Only Routes:
+
+PUT /api/v1/users/:id - Update any user
+DELETE /api/v1/users/:id - Soft delete user
+PATCH /api/v1/users/bulk/update - Bulk update users
+PATCH /api/v1/users/:id/status - Change user status
+
+⚙️ Utility Routes:
+
+GET /api/v1/users/permissions/check
+
+## Inquiry Endpoints
+
+### 1. Create Inquiry
+**POST** `/inquiries`
+
+Creates a new inquiry in the system. By default, inquiry starts in "new" stage.
+
+**Request Body:**
+```json
+{
+  "inquiry_name": "Goa Family Trip",
+  "inquiry_type": "hotel", // hotel | ticket | transport
+  "customer_name": "John Doe",
+  "customer_phone": "+919876543210",
+  "customer_email": "john@example.com",
+  "adults_count": 2,
+  "children_count": 1,
+  "children_ages": [8],
+  "tentative_date": "2024-12-15T00:00:00.000Z",
+  "inquiry_priority": "high", // high | medium | low
+  "contact_person_name": "Jane Doe", // For corporate inquiries
+  "contact_person_phone": "+919876543211",
+  "followup_date": "2024-10-15T10:00:00.000Z",
+  "notes": "Family vacation for Christmas",
+  
+  // Hotel-specific details
+  "hotel_details": {
+    "checkin_date": "2024-12-15T14:00:00.000Z",
+    "checkout_date": "2024-12-18T11:00:00.000Z",
+    "number_of_rooms": 2,
+    "meal_plan": "breakfast", // room_only | breakfast | half_board | full_board | all_inclusive
+    "destination": "Goa",
+    "duration_nights": 3,
+    "hotel_category": "4_star", // 1_star | 2_star | 3_star | 4_star | 5_star | luxury
+    "budget_per_person": 5000,
+    "total_budget": 15000
+  },
+  
+  // Ticket-specific details
+  "ticket_details": {
+    "destination": "Mumbai",
+    "travel_date": "2024-12-15T00:00:00.000Z",
+    "travel_mode": "air", // air | train
+    "departure_from": "Delhi",
+    "return_date": "2024-12-18T00:00:00.000Z",
+    "trip_type": "round_trip" // one_way | round_trip
+  },
+  
+  // Transport-specific details
+  "transport_details": {
+    "destination": "Agra",
+    "vehicle_type": "SUV",
+    "pickup_location": "Delhi Airport",
+    "drop_location": "Agra Hotel",
+    "pickup_date": "2024-12-15T08:00:00.000Z",
+    "pickup_time": "08:00:00",
+    "vehicle_details": "AC SUV for 4 people with driver"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Inquiry created successfully",
+  "data": {
+    "id": 1,
+    "inquiry_name": "Goa Family Trip",
+    "inquiry_type": "hotel",
+    "stage": "new",
+    "customer_name": "John Doe",
+    // ... other fields
+    "hotel_details": { /* hotel details */ },
+    "creator": {
+      "id": 1,
+      "name": "Admin User",
+      "email": "admin@example.com"
+    }
+  }
+}
+```
+
+### 2. List Inquiries
+**GET** `/inquiries`
+
+Retrieves paginated list of inquiries with filtering and search capabilities.
+
+**Query Parameters:**
+- `page` (optional): Page number (default: 1)
+- `limit` (optional): Items per page (default: 20, max: 100)
+- `search` (optional): Search in inquiry name, customer name, or phone
+- `stage` (optional): Filter by stage (new, in_progress, waiting_for_customer, etc.)
+- `inquiry_type` (optional): Filter by type (hotel, ticket, transport)
+- `priority` (optional): Filter by priority (high, medium, low)
+- `assigned_to` (optional): Filter by assigned user ID
+- `date_from` (optional): Filter from date (YYYY-MM-DD)
+- `date_to` (optional): Filter to date (YYYY-MM-DD)
+- `sort_by` (optional): Sort field (default: created_at)
+- `sort_order` (optional): Sort order (ASC, DESC - default: DESC)
+
+**Example Request:**
+```
+GET /inquiries?page=1&limit=20&stage=new&inquiry_type=hotel&search=goa
+```
+
+**Response:**
+```json
+{
+  "message": "Inquiries fetched successfully",
+  "data": {
+    "inquiries": [
+      {
+        "id": 1,
+        "inquiry_name": "Goa Family Trip",
+        "inquiry_type": "hotel",
+        "stage": "new",
+        "customer_name": "John Doe",
+        "customer_phone": "+919876543210",
+        "adults_count": 2,
+        "children_count": 1,
+        "tentative_date": "2024-12-15T00:00:00.000Z",
+        "inquiry_priority": "high",
+        "total_amount": 0,
+        "paid_amount": 0,
+        "created_at": "2024-10-10T10:00:00.000Z",
+        "creator": {
+          "id": 1,
+          "name": "Admin User",
+          "email": "admin@example.com"
+        },
+        "assignee": null,
+        "hotel_details": {
+          "destination": "Goa",
+          "checkin_date": "2024-12-15T14:00:00.000Z",
+          "checkout_date": "2024-12-18T11:00:00.000Z"
+        }
+      }
+    ],
+    "pagination": {
+      "current_page": 1,
+      "per_page": 20,
+      "total": 1,
+      "total_pages": 1
+    }
+  }
+}
+```
+
+### 3. Get Inquiry Details
+**GET** `/inquiries/{id}`
+
+Retrieves complete details of a specific inquiry.
+
+**Response:**
+```json
+{
+  "message": "Inquiry details fetched successfully",
+  "data": {
+    "id": 1,
+    "inquiry_name": "Goa Family Trip",
+    "inquiry_type": "hotel",
+    "stage": "new",
+    // ... all inquiry fields
+    "hotel_details": { /* complete hotel details */ },
+    "creator": { /* creator details */ },
+    "assignee": { /* assignee details */ }
+  }
+}
+```
+
+### 4. Update Inquiry
+**PUT** `/inquiries/{id}`
+
+Updates inquiry information.
+
+**Request Body:** (Same structure as create, but all fields optional)
+
+### 5. Update Inquiry Stage
+**PATCH** `/inquiries/{id}/stage`
+
+Updates inquiry stage and creates stage history.
+
+**Request Body:**
+```json
+{
+  "stage": "in_progress",
+  "notes": "Started working on quotation"
+}
+```
+
+### 6. Get Board Data (Kanban View)
+**GET** `/inquiries/board`
+
+Retrieves inquiries organized by stages for Kanban board view.
+
+**Query Parameters:**
+- `assigned_to` (optional): Filter by assigned user
+- `inquiry_type` (optional): Filter by inquiry type
+
+**Response:**
+```json
+{
+  "message": "Board data fetched successfully",
+  "data": {
+    "new": [
+      { /* inquiry data */ }
+    ],
+    "in_progress": [
+      { /* inquiry data */ }
+    ],
+    "waiting_for_customer": [],
+    "need_changes": [],
+    "approved": [],
+    "closed": []
+  }
+}
+```
+
+### 7. Add Inquiry Detail
+**POST** `/inquiries/{id}/details`
+
+Adds quotation, note, or reminder to inquiry.
+
+**Request Body:**
+```json
+{
+  "type": "quotation", // quotation | note | reminder
+  "title": "Hotel Quotation v1",
+  "description": "Detailed quotation for Goa hotels",
+  "attachment": "path/to/file.pdf",
+  "reminder_date": "2024-10-15T10:00:00.000Z" // Required for reminder type
+}
+```
+
+### 8. Get Inquiry Details
+**GET** `/inquiries/{id}/details`
+
+Retrieves quotations, notes, and reminders for inquiry.
+
+**Query Parameters:**
+- `type` (optional): Filter by type (quotation, note, reminder)
+- `page` (optional): Page number
+- `limit` (optional): Items per page
+
+### 9. Add Payment
+**POST** `/inquiries/{id}/payments`
+
+Records a payment for inquiry.
+
+**Request Body:**
+```json
+{
+  "amount": 5000,
+  "payment_method": "upi", // cash | card | bank_transfer | upi | cheque
+  "payment_date": "2024-10-15T00:00:00.000Z",
+  "transaction_id": "TXN123456789",
+  "notes": "Advance payment received",
+  "receipt_number": "RCP001" // Optional, auto-generated if not provided
+}
+```
+
+### 10. Create Invoice
+**POST** `/inquiries/{id}/invoices`
+
+Creates invoice for inquiry.
+
+**Request Body:**
+```json
+{
+  "subtotal": 15000,
+  "gst_amount": 2700,
+  "total_amount": 17700,
+  "gst_number": "22AAAAA0000A1Z5",
+  "invoice_items": [
+    {
+      "description": "Hotel booking for 3 nights",
+      "quantity": 3,
+      "rate": 5000,
+      "amount": 15000
+    }
+  ],
+  "status": "draft" // draft | sent | paid | cancelled
+}
+```
+
+### 11. Assign Inquiry
+**PATCH** `/inquiries/{id}/assign`
+
+Assigns inquiry to a user.
+
+**Request Body:**
+```json
+{
+  "assigned_to": 2
+}
+```
+
+### 12. Bulk Update
+**PATCH** `/inquiries/bulk/update`
+
+Updates multiple inquiries at once.
+
+**Request Body:**
+```json
+{
+  "inquiry_ids": [1, 2, 3],
+  "updates": {
+    "stage": "in_progress",
+    "assigned_to": 2
+  }
+}
+```
+
+### 13. Dashboard Statistics
+**GET** `/inquiries/stats`
+
+Retrieves dashboard statistics.
+
+**Query Parameters:**
+- `date_from` (optional): From date filter
+- `date_to` (optional): To date filter
+- `assigned_to` (optional): Filter by assigned user
+
+**Response:**
+```json
+{
+  "message": "Dashboard stats fetched successfully",
+  "data": {
+    "stage_stats": [
+      { "stage": "new", "count": 5 },
+      { "stage": "in_progress", "count": 3 }
+    ],
+    "type_stats": [
+      { "inquiry_type": "hotel", "count": 4 },
+      { "inquiry_type": "ticket", "count": 3 }
+    ],
+    "priority_stats": [
+      { "inquiry_priority": "high", "count": 2 },
+      { "inquiry_priority": "medium", "count": 4 }
+    ],
+    "total_stats": {
+      "total_amount": 50000,
+      "paid_amount": 15000,
+      "total_inquiries": 8
+    }
+  }
+}
+```
+
+## Error Responses
+
+### Validation Error (422)
+```json
+{
+  "message": "Validation failed",
+  "data": {
+    "errors": [
+      {
+        "field": "customer_name",
+        "message": "Customer name is required",
+        "value": ""
+      }
+    ]
+  }
+}
+```
+
+### Not Found (404)
+```json
+{
+  "message": "Inquiry not found"
+}
+```
+
+### Unauthorized (401)
+```json
+{
+  "message": "Access token is required"
+}
+```
+
+## Status Codes
+- 200: Success
+- 201: Created
+- 400: Bad Request
+- 401: Unauthorized
+- 403: Forbidden
+- 404: Not Found
+- 422: Validation Error
+- 500: Internal Server Error
+
+## Inquiry Stages Flow
+1. **new** → Initial stage when inquiry is created
+2. **in_progress** → When agent starts working on quotation
+3. **waiting_for_customer** → After quotation is shared with customer
+4. **need_changes** → When customer requests modifications
+5. **approved** → When customer approves the quotation
+6. **closed** → Trip completed successfully
+7. **cancelled** → Inquiry cancelled
+
+## Integration Notes
+
+### React Admin Integration
+The API is designed to work seamlessly with React Admin components:
+
+- **List View**: Use `/inquiries` endpoint with pagination and filters
+- **Create/Edit Forms**: Use POST `/inquiries` and PUT `/inquiries/{id}`
+- **Board View**: Use `/inquiries/board` for Kanban display
+- **Detail View**: Use `/inquiries/{id}` with tabs for details, payments, invoices
+
+### Google Calendar Integration
+For followup reminders, integrate with Google Calendar API using the `followup_date` field.
+
+### File Upload
+Implement file upload for attachments in quotations and other details using multipart/form-data.

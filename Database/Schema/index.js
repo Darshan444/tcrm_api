@@ -3,13 +3,16 @@ import path from 'path';
 import { Sequelize, DataTypes } from 'sequelize';
 import { fileURLToPath } from 'url';
 
+import { dbConfig } from "../../Configs/database.js";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || 'development';
-const configModule = await import(path.join(__dirname, '../../Configs/database.js'));
-const config = configModule.default[env];
+// const configModule = await import(path.join(__dirname, '../../Configs/database.js'));
+// const config = configModule.default[env];
+const config = dbConfig[env];
 
 const db = {};
 
