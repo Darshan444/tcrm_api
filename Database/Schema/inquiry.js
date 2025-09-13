@@ -1,4 +1,3 @@
-// Database/Schema/inquiry.js
 export default (sequelize, DataTypes) => {
     const Inquiry = sequelize.define('inquiry', {
         id: {
@@ -6,63 +5,48 @@ export default (sequelize, DataTypes) => {
             primaryKey: true,
             autoIncrement: true
         },
-        inquiry_name: {
-            type: DataTypes.STRING,
+        inquiryTitle: {
+            type: DataTypes.STRING(500),
             allowNull: false
         },
-        inquiry_type: {
-            type: DataTypes.ENUM('hotel', 'ticket', 'transport'),
+        inquiryType: {
+            type: DataTypes.ENUM('DOMESTIC', 'INTERNATIONAL'),
             allowNull: false
         },
-        customer_name: {
-            type: DataTypes.STRING,
-            allowNull: false
+        inquiryPriority: {
+            type: DataTypes.ENUM('HIGH', 'MEDIUM', 'LOW'),
+            allowNull: false,
+            defaultValue: 'MEDIUM'
         },
-        customer_phone: {
-            type: DataTypes.STRING,
-            allowNull: false
-        },
-        customer_email: {
-            type: DataTypes.STRING,
+        followupDate: {
+            type: DataTypes.DATEONLY,
             allowNull: true
         },
-        adults_count: {
-            type: DataTypes.INTEGER,
-            defaultValue: 1
-        },
-        children_count: {
-            type: DataTypes.INTEGER,
-            defaultValue: 0
-        },
-        children_ages: {
-            type: DataTypes.JSON, // Array of ages [5, 8, 12]
+        inquiryDetail: {
+            type: DataTypes.TEXT,
             allowNull: true
         },
-        tentative_date: {
-            type: DataTypes.DATE,
-            allowNull: false
+        status: {
+            type: DataTypes.ENUM('PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'),
+            defaultValue: 'PENDING'
         },
-        inquiry_priority: {
-            type: DataTypes.ENUM('high', 'medium', 'low'),
-            defaultValue: 'medium'
+        hotelBookingFlag: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
         },
-        contact_person_name: {
-            type: DataTypes.STRING,
-            allowNull: true // For corporate inquiries
+        ticketBookingFlag: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
         },
-        contact_person_phone: {
-            type: DataTypes.STRING,
-            allowNull: true // For corporate inquiries
+        transportBookingFlag: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
         },
-        followup_date: {
-            type: DataTypes.DATE,
-            allowNull: true
+        totalEstimatedCost: {
+            type: DataTypes.DECIMAL(12, 2),
+            defaultValue: 0.00
         },
-        stage: {
-            type: DataTypes.ENUM('new', 'in_progress', 'waiting_for_customer', 'need_changes', 'approved', 'closed', 'cancelled'),
-            defaultValue: 'new'
-        },
-        assigned_to: {
+        assignedTo: {
             type: DataTypes.INTEGER,
             allowNull: true,
             references: {
@@ -70,23 +54,7 @@ export default (sequelize, DataTypes) => {
                 key: 'id'
             }
         },
-        total_amount: {
-            type: DataTypes.DECIMAL(10, 2),
-            defaultValue: 0.00
-        },
-        paid_amount: {
-            type: DataTypes.DECIMAL(10, 2),
-            defaultValue: 0.00
-        },
-        notes: {
-            type: DataTypes.TEXT,
-            allowNull: true
-        },
-        status: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: true
-        },
-        created_by: {
+        createdBy: {
             type: DataTypes.INTEGER,
             allowNull: false,
             references: {
@@ -94,57 +62,44 @@ export default (sequelize, DataTypes) => {
                 key: 'id'
             }
         },
-        updated_by: {
+        updatedBy: {
             type: DataTypes.INTEGER,
             allowNull: true,
             references: {
                 model: 'users',
                 key: 'id'
             }
+        },
+        createdAt: {
+            type: DataTypes.DATE,
+            allowNull: false,
+            defaultValue: DataTypes.NOW
+        },
+        updatedAt: {
+            type: DataTypes.DATE,
+            allowNull: false,
+            defaultValue: DataTypes.NOW
         }
     }, {
         timestamps: true,
-        underscored: true,
+        underscored: false,
         tableName: 'inquiries'
     });
 
     Inquiry.associate = (models) => {
-        Inquiry.belongsTo(models.user, { 
-            foreignKey: 'created_by', 
-            as: 'creator' 
-        });
-        Inquiry.belongsTo(models.user, { 
-            foreignKey: 'assigned_to', 
-            as: 'assignee' 
-        });
-        Inquiry.hasOne(models.inquiry_hotel_detail, { 
-            foreignKey: 'inquiry_id',
-            as: 'hotel_details'
-        });
-        Inquiry.hasOne(models.inquiry_ticket_detail, { 
-            foreignKey: 'inquiry_id',
-            as: 'ticket_details'
-        });
-        Inquiry.hasOne(models.inquiry_transport_detail, { 
-            foreignKey: 'inquiry_id',
-            as: 'transport_details'
-        });
-        Inquiry.hasMany(models.inquiry_stage_history, { 
-            foreignKey: 'inquiry_id',
-            as: 'stage_history'
-        });
-        Inquiry.hasMany(models.inquiry_detail, { 
-            foreignKey: 'inquiry_id',
-            as: 'details'
-        });
-        Inquiry.hasMany(models.inquiry_payment, { 
-            foreignKey: 'inquiry_id',
-            as: 'payments'
-        });
-        Inquiry.hasMany(models.inquiry_invoice, { 
-            foreignKey: 'inquiry_id',
-            as: 'invoices'
-        });
+        Inquiry.belongsTo(models.user, { foreignKey: 'createdBy', as: 'creator' });
+        Inquiry.belongsTo(models.user, { foreignKey: 'assignedTo', as: 'assignee' });
+        Inquiry.belongsTo(models.user, { foreignKey: 'updatedBy', as: 'updater' });
+        
+        Inquiry.hasOne(models.customerInfo, { foreignKey: 'inquiryId', as: 'customerInfo' });
+        Inquiry.hasOne(models.corporateData, { foreignKey: 'inquiryId', as: 'corporateData' });
+        Inquiry.hasOne(models.hotelBooking, { foreignKey: 'inquiryId', as: 'hotelBooking' });
+        Inquiry.hasOne(models.ticketBooking, { foreignKey: 'inquiryId', as: 'ticketBooking' });
+        Inquiry.hasOne(models.transportBooking, { foreignKey: 'inquiryId', as: 'transportBooking' });
+        
+        Inquiry.hasMany(models.inquiryPayment, { foreignKey: 'inquiryId', as: 'payments' });
+        Inquiry.hasMany(models.inquiryStageHistory, { foreignKey: 'inquiryId', as: 'stageHistory' });
+        Inquiry.hasMany(models.inquiryNotes, { foreignKey: 'inquiryId', as: 'notes' });
     };
 
     return Inquiry;

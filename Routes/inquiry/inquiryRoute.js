@@ -17,7 +17,8 @@ const router = express.Router();
 const inquiryController = new InquiryController();
 
 // Create inquiry
-router.post('/', authenticate, validate(createInquiryValidation), inquiryController.create);
+// router.post('/', authenticate, validate(createInquiryValidation), inquiryController.create);
+router.post('/', validate(createInquiryValidation), inquiryController.create);
 
 // List inquiries
 router.get('/', authenticate, validate(listQueryValidation), inquiryController.list);
